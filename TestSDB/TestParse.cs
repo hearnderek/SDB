@@ -8,10 +8,8 @@ namespace TestSDB
     {
 
         [TestMethod]
-        public void Parse()
+        public void SelectParse()
         {
-            //skip all start select block
-
             var a = SDB.Parser.Parse(
                new[] { "FROM Taku SELECT *" }
                );
@@ -39,6 +37,21 @@ namespace TestSDB
                 Assert.AreEqual("two", ((SDB.Get)b).columns[1].columnName);
                 Assert.AreEqual("three", ((SDB.Get)b).columns[2].columnName);
             }
+        }
+
+        [TestMethod]
+        public void CreateParse()
+        {
+            var a = SDB.Parser.Parse(
+               new[] { "CREATE TABLE Taku ( one int, two int, three int )" }
+               );
+            Assert.AreEqual("Taku", ((SDB.CreateTable)a).tableName);
+            Assert.AreEqual("one", ((SDB.CreateTable)a).columns[0].name);
+            Assert.AreEqual("int", ((SDB.CreateTable)a).columns[0].type);
+            Assert.AreEqual("three", ((SDB.CreateTable)a).columns[2].name);
+            Assert.AreEqual("int", ((SDB.CreateTable)a).columns[2].type);
+
+            
         }
     }
 }
