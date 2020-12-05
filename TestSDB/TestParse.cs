@@ -10,12 +10,12 @@ namespace TestSDB
         [TestMethod]
         public void Parse()
         {
-            // skip all start select block
-            //
-            //var a = SDB.Parser.Parse(
-            //    new[] { "FROM Taku SELECT *" }
-            //    );
-            //Assert.AreEqual("*",((SDB.Get)a).columns[0].columnName);
+            //skip all start select block
+
+            var a = SDB.Parser.Parse(
+               new[] { "FROM Taku SELECT *" }
+               );
+            Assert.AreEqual("*", ((SDB.Get)a).columns[0].columnName);
 
             string[] equivalents = new[]
             {
