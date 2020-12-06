@@ -14,7 +14,37 @@ namespace SDB
             return Query.Parse(save);
         }
 
-        
+        public static string ParseWord(Benumerator<char> en, bool possiblyAtEnd = false)
+        {
+            Parser.SkipWhitespace(en);
+
+            List<char> work = new List<char>();
+            do
+            {
+                work.Add(en.Current);
+            }
+            while (en.MoveNext() && en.Current != ' ' && en.Current != ',' && en.Current != '(' && en.Current != ')');
+
+
+            return new String(work.ToArray());
+        }
+
+        public static void SkipWhitespace(Benumerator<char> en)
+        {
+            if (en.Current == ' ')
+                en.MoveNext();
+        }
+
+        public static bool HasValue(Benumerator<char> en, string value)
+        {
+            foreach(Char c in value)
+            {
+                if (en.Current != c)
+                    return false;
+                en.MoveNext();
+            }
+            return true;
+        }
     }
 
     public class Query
@@ -35,12 +65,99 @@ namespace SDB
             {
                 return Get.Parse(s);
             }
+            else if (en.Current == 'I')
+            {
+                return Insert.Parse(s);
+            }
             else
             {
                 throw new Exception("Unrecognized first command");
             }
         }
 
+    }
+
+    public class Insert : Query
+    {
+        public string tableName;
+        public SelectColumn[] columns;
+        public List<SelectColumn[]> rows;
+
+        public static new Insert Parse(Benumerator<char> en)
+        {
+            if (!en.MoveNext() || (en.Current == ' ' && !en.MoveNext()))
+                throw new Exception("failed to parse. No Input");
+
+
+            if (!Parser.HasValue(en, "INSERT INTO "))
+                throw new Exception("failed to parse INSERT. Expecting 'INSERT INTO '");
+
+
+            var tableName = Parser.ParseWord(en);
+            Parser.SkipWhitespace(en);
+
+            if (! Parser.HasValue(en, "("))
+                throw new Exception("failed to parse INSERT. Expecting '('");
+
+            var columns = SelectColumn.Parse(en).ToArray();
+            Parser.SkipWhitespace(en);
+
+            if (!Parser.HasValue(en, ")"))
+                throw new Exception("failed to parse INSERT. Expecting ')'");
+            Parser.SkipWhitespace(en);
+
+            if (!Parser.HasValue(en, "VALUES"))
+                throw new Exception("failed to parse INSERT. Expecting ')'");
+
+            List<SelectColumn[]> rows = new List<SelectColumn[]>();
+            do
+            {
+                Parser.SkipWhitespace(en);
+
+                if (!Parser.HasValue(en, "("))
+                    throw new Exception("failed to parse INSERT. Expecting ')'");
+
+                Parser.SkipWhitespace(en);
+
+                var values = SelectColumn.Parse(en).ToArray();
+                if (values.Length != columns.Length)
+                    throw new Exception("failed to parse INSERT. Number of values do not match number of columns");
+                rows.Add(values);
+
+                Parser.SkipWhitespace(en);
+
+                if (!Parser.HasValue(en, ")"))
+                    throw new Exception("failed to parse INSERT. Expecting ')'");
+
+                Parser.SkipWhitespace(en);
+
+            } while (Parser.HasValue(en, ","));
+
+            return new Insert
+            {
+                tableName = tableName,
+                columns = columns,
+                rows = rows
+            };
+        }
+    }
+
+    public class DirectValue
+    {
+        public static new Get Parse(Benumerator<char> en)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class InsertValueRow
+    {
+        public static DirectValue[] values;
+
+        public static new Get Parse(Benumerator<char> en)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class Get : Query
@@ -90,7 +207,7 @@ namespace SDB
 
 
             // I am very lazily forcing the use of * for now
-            foreach(var col in SelectColumn.Parse(en))
+            foreach(var col in SelectColumn.Parse(en, true))
             {
                 yield return col;
             }
@@ -101,40 +218,22 @@ namespace SDB
     {
         public string columnName = "*";
 
-        public static IEnumerable<SelectColumn> Parse(Benumerator<Char> en)
+        public static IEnumerable<SelectColumn> Parse(Benumerator<Char> en, bool possiblyAtEnd = false)
         {
-            List<char> columnName;
             do
             {
-                if (en.Current == ' ')
-                    en.MoveNext();
+                Parser.SkipWhitespace(en);
 
-                columnName = new List<char>();
-                while (en.Current != ' ' && en.Current != ',')
-                {
-                    columnName.Add(en.Current);
-                    if (!en.MoveNext())
-                    {
-                        yield return new SelectColumn
-                        {
-                            columnName = new String(columnName.ToArray()).Trim()
-                        };
-                        yield break;
-                    }
-                }
-
-                string lastColumn = new String(columnName.ToArray()).Trim();
-                if (! String.IsNullOrWhiteSpace(lastColumn))
+                string columnName = Parser.ParseWord(en, possiblyAtEnd);
+                if(!String.IsNullOrWhiteSpace(columnName))
                 {
                     yield return new SelectColumn
                     {
-                        columnName = lastColumn
+                        columnName = columnName
                     };
                 }
 
-                if (en.Current == ' ')
-                    if (!en.MoveNext())
-                        yield break;
+                Parser.SkipWhitespace(en);
             }
             while (en.Current == ',' && en.MoveNext());
         }

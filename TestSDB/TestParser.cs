@@ -4,11 +4,11 @@
 namespace TestSDB
 {
     [TestClass]
-    public class TestParse
+    public class TestParser
     {
 
         [TestMethod]
-        public void SelectParse()
+        public void TestSelect()
         {
             var a = SDB.Parser.Parse(
                new[] { "FROM Taku SELECT *" }
@@ -40,7 +40,7 @@ namespace TestSDB
         }
 
         [TestMethod]
-        public void CreateParse()
+        public void TestCreate()
         {
             var a = SDB.Parser.Parse(
                new[] { "CREATE TABLE Taku ( one int, two int, three int )" }
@@ -52,6 +52,43 @@ namespace TestSDB
             Assert.AreEqual("int", ((SDB.CreateTable)a).columns[2].type);
 
             
+        }
+
+        [TestMethod]
+        public void TestInsertValues()
+        {
+            var a = SDB.Parser.Parse(
+               new[] { "INSERT INTO Taku (one, two, three) VALUES ( 1, 2, 3 ), ( 1, 2, 3 )" }
+               );
+            Assert.AreEqual("Taku", ((SDB.Insert)a).tableName);
+            Assert.AreEqual("one", ((SDB.Insert)a).columns[0].columnName);
+            Assert.AreEqual("two", ((SDB.Insert)a).columns[1].columnName);
+            Assert.AreEqual("three", ((SDB.Insert)a).columns[2].columnName);
+
+
+        }
+
+
+        [TestMethod]
+        public void TestParseWord()
+        {
+            var en = SDB.Benumerator.AsLongString(new[] { "one ,two ,three" });
+            en.MoveNext();
+
+            Assert.AreEqual("one", SDB.Parser.ParseWord(en));
+            SDB.Parser.SkipWhitespace(en);
+            if (en.Current == ',')
+                en.MoveNext();
+
+            Assert.AreEqual("two", SDB.Parser.ParseWord(en));
+            SDB.Parser.SkipWhitespace(en);
+            if (en.Current == ',')
+                en.MoveNext();
+
+            Assert.AreEqual("three", SDB.Parser.ParseWord(en, true));
+
+
+
         }
     }
 }
