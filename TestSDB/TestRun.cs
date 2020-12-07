@@ -62,13 +62,13 @@ namespace TestSDB
         [TestMethod]
         public void TestDelete()
         {
-            throw new NotImplementedException();
+            Assert.Inconclusive();
         }
 
         [TestMethod]
         public void TestDrop()
         {
-            throw new NotImplementedException();
+            Assert.Inconclusive();
         }
     }
 
