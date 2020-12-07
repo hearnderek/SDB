@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SDB
+namespace SDB.Parts
 {
     public class ColumnDefinition
     {
@@ -9,7 +9,7 @@ namespace SDB
         public string name;
         public bool nullable = true;
 
-        public static ColumnDefinition Parse(Benumerator<Char> en)
+        public static ColumnDefinition Parse(Benumerator<char> en)
         {
             ColumnDefinition colDef = new ColumnDefinition();
             List<char> col;
@@ -23,7 +23,7 @@ namespace SDB
                 col.Add(en.Current);
                 en.MoveNext();
             }
-            colDef.name = new String(col.ToArray()).Trim();
+            colDef.name = new string(col.ToArray()).Trim();
 
             if (en.Current == ',')
                 throw new Exception("Failed parsing Column Definition. Missing type");
@@ -36,7 +36,7 @@ namespace SDB
                 col.Add(en.Current);
                 en.MoveNext();
             }
-            colDef.type = new String(col.ToArray()).Trim();
+            colDef.type = new string(col.ToArray()).Trim();
 
             return colDef;
         }

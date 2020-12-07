@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SDB
+namespace SDB.Parts
 {
     public class CreateTable : Query
     {
         public string tableName;
         public ColumnDefinition[] columns;
 
-        public static new CreateTable Parse(Benumerator<Char> en)
+        public static new CreateTable Parse(Benumerator<char> en)
         {
-            if (!en.MoveNext() || (en.Current == ' ' && !en.MoveNext()))
+            if (!en.MoveNext() || en.Current == ' ' && !en.MoveNext())
                 throw new Exception("failed to parse. No Input");
 
             if (en.Current != 'C' || !en.MoveNext()
@@ -51,12 +51,12 @@ namespace SDB
             if (en.Current == ' ')
                 en.MoveNext();
 
-            if (en.Current != ')' )
+            if (en.Current != ')')
                 throw new Exception("failed to parse CREATE. Ending ')' is missing");
 
             return new CreateTable
             {
-                tableName = new String(tableName.ToArray()).Trim(),
+                tableName = new string(tableName.ToArray()).Trim(),
                 columns = colDefs.ToArray()
             };
         }

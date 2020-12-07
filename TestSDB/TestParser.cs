@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SDB.Parts;
 using System;
 
 
@@ -14,7 +15,7 @@ namespace TestSDB
             var a = SDB.Parser.Parse(
                new[] { "FROM Taku SELECT *" }
                );
-            Assert.AreEqual("*", ((SDB.Get)a).columns[0].columnName);
+            Assert.AreEqual("*", ((Get)a).columns[0].columnName);
 
             string[] equivalents = new[]
             {
@@ -33,10 +34,10 @@ namespace TestSDB
                     new[] { input }
                     );
 
-                Assert.AreEqual(3, ((SDB.Get)b).columns.Length);
-                Assert.AreEqual("one", ((SDB.Get)b).columns[0].columnName );
-                Assert.AreEqual("two", ((SDB.Get)b).columns[1].columnName);
-                Assert.AreEqual("three", ((SDB.Get)b).columns[2].columnName);
+                Assert.AreEqual(3, ((Get)b).columns.Length);
+                Assert.AreEqual("one", ((Get)b).columns[0].columnName );
+                Assert.AreEqual("two", ((Get)b).columns[1].columnName);
+                Assert.AreEqual("three", ((Get)b).columns[2].columnName);
             }
         }
 
@@ -46,11 +47,11 @@ namespace TestSDB
             var a = SDB.Parser.Parse(
                new[] { "CREATE TABLE Taku ( one int, two int, three int )" }
                );
-            Assert.AreEqual("Taku", ((SDB.CreateTable)a).tableName);
-            Assert.AreEqual("one", ((SDB.CreateTable)a).columns[0].name);
-            Assert.AreEqual("int", ((SDB.CreateTable)a).columns[0].type);
-            Assert.AreEqual("three", ((SDB.CreateTable)a).columns[2].name);
-            Assert.AreEqual("int", ((SDB.CreateTable)a).columns[2].type);
+            Assert.AreEqual("Taku", ((CreateTable)a).tableName);
+            Assert.AreEqual("one", ((CreateTable)a).columns[0].name);
+            Assert.AreEqual("int", ((CreateTable)a).columns[0].type);
+            Assert.AreEqual("three", ((CreateTable)a).columns[2].name);
+            Assert.AreEqual("int", ((CreateTable)a).columns[2].type);
 
             
         }
@@ -61,10 +62,10 @@ namespace TestSDB
             var a = SDB.Parser.Parse(
                new[] { "INSERT INTO Taku (one, two, three) VALUES ( 1, 2, 3 ), ( 1, 2, 3 )" }
                );
-            Assert.AreEqual("Taku", ((SDB.Insert)a).tableName);
-            Assert.AreEqual("one", ((SDB.Insert)a).columns[0].columnName);
-            Assert.AreEqual("two", ((SDB.Insert)a).columns[1].columnName);
-            Assert.AreEqual("three", ((SDB.Insert)a).columns[2].columnName);
+            Assert.AreEqual("Taku", ((Insert)a).tableName);
+            Assert.AreEqual("one", ((Insert)a).columns[0].columnName);
+            Assert.AreEqual("two", ((Insert)a).columns[1].columnName);
+            Assert.AreEqual("three", ((Insert)a).columns[2].columnName);
 
 
         }

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SDB
+namespace SDB.Parts
 {
     public class From
     {
-        public static string Parse(Benumerator<Char> en)
+        public static string Parse(Benumerator<char> en)
         {
 
             if (en.Current != 'F' || !en.MoveNext()
@@ -26,7 +26,7 @@ namespace SDB
             if (!en.MoveNext())
                 throw new Exception("failed to parse FROM. Unexpected end up input");
 
-            return new String(tableName.ToArray());
+            return new string(tableName.ToArray());
         }
 
     }

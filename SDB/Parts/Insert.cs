@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SDB
+namespace SDB.Parts
 {
     public class Insert : Query
     {
@@ -12,7 +12,7 @@ namespace SDB
 
         public static new Insert Parse(Benumerator<char> en)
         {
-            if (!en.MoveNext() || (en.Current == ' ' && !en.MoveNext()))
+            if (!en.MoveNext() || en.Current == ' ' && !en.MoveNext())
                 throw new Exception("failed to parse. No Input");
 
 
@@ -23,7 +23,7 @@ namespace SDB
             var tableName = Parser.ParseWord(en);
             Parser.SkipWhitespace(en);
 
-            if (! Parser.HasValue(en, "("))
+            if (!Parser.HasValue(en, "("))
                 throw new Exception("failed to parse INSERT. Expecting '('");
 
             var columns = SelectColumn.Parse(en).ToArray();

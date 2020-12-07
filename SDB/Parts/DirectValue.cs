@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SDB
+namespace SDB.Parts
 {
     public class DirectValue
     {

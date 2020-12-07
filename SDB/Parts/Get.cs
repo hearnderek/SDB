@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace SDB
+namespace SDB.Parts
 {
     public class Get : Query
     {
@@ -11,13 +11,13 @@ namespace SDB
         public static new Get Parse(Benumerator<char> en)
         {
             // Skipping first whitespace and failing if empty
-            if (!en.MoveNext() || (en.Current == ' ' && !en.MoveNext()))
+            if (!en.MoveNext() || en.Current == ' ' && !en.MoveNext())
                 throw new Exception("failed to parse. No Input");
 
             var from = From.Parse(en);
             var cols = Select.Parse(en).ToArray();
 
-            if(from != null && cols.Length > 0)
+            if (from != null && cols.Length > 0)
             {
                 return new Get
                 {

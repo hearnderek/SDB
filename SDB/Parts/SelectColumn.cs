@@ -1,20 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SDB
+namespace SDB.Parts
 {
     public class SelectColumn
     {
         public string columnName = "*";
 
-        public static IEnumerable<SelectColumn> Parse(Benumerator<Char> en, bool possiblyAtEnd = false)
+        public static IEnumerable<SelectColumn> Parse(Benumerator<char> en, bool possiblyAtEnd = false)
         {
             do
             {
                 Parser.SkipWhitespace(en);
 
                 string columnName = Parser.ParseWord(en, possiblyAtEnd);
-                if(!String.IsNullOrWhiteSpace(columnName))
+                if (!string.IsNullOrWhiteSpace(columnName))
                 {
                     yield return new SelectColumn
                     {

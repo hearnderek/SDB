@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SDB
+namespace SDB.Parts
 {
     public class Select
     {
-        public static IEnumerable<SelectColumn> Parse(Benumerator<Char> en)
+        public static IEnumerable<SelectColumn> Parse(Benumerator<char> en)
         {
             // Next value MUST be "SELECT " 
             if (en.Current != 'S' || !en.MoveNext()
@@ -20,7 +20,7 @@ namespace SDB
 
 
             // I am very lazily forcing the use of * for now
-            foreach(var col in SelectColumn.Parse(en, true))
+            foreach (var col in SelectColumn.Parse(en, true))
             {
                 yield return col;
             }
