@@ -31,5 +31,10 @@ namespace SDB
             }
 
         }
+
+        public override void Run()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Data;
 
 namespace SDB
 {
-    public class Query
+    public abstract class Query
     {
+        public DataTable result;
+        public bool executed = false;
+
         public static Query Parse(Benumerator<char> en)
         {
             var s = en.Save();
@@ -29,6 +33,8 @@ namespace SDB
                 throw new Exception("Unrecognized first command");
             }
         }
+
+        public abstract void Run();
 
     }
 }

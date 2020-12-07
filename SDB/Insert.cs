@@ -67,5 +67,10 @@ namespace SDB
                 rows = rows
             };
         }
+
+        public override void Run()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

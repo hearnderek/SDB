@@ -45,4 +45,12 @@ namespace SDB
             return true;
         }
     }
+
+    public class Runner
+    {
+        public static void NoResult(Query query)
+        {
+            //query.
+        }
+    }
 }

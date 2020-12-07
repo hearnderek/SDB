@@ -60,5 +60,10 @@ namespace SDB
                 columns = colDefs.ToArray()
             };
         }
+
+        public override void Run()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
