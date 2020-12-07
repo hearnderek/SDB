@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 
 
 namespace TestSDB
@@ -66,6 +67,18 @@ namespace TestSDB
             Assert.AreEqual("three", ((SDB.Insert)a).columns[2].columnName);
 
 
+        }
+
+        [TestMethod]
+        public void TestDelete()
+        {
+            throw new NotImplementedException();
+        }
+
+        [TestMethod]
+        public void TestDrop()
+        {
+            throw new NotImplementedException();
         }
 
 

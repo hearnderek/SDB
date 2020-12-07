@@ -58,6 +58,18 @@ namespace TestSDB
                 query.Run();
             }
         }
+
+        [TestMethod]
+        public void TestDelete()
+        {
+            throw new NotImplementedException();
+        }
+
+        [TestMethod]
+        public void TestDrop()
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }
