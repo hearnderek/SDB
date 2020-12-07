@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SDB.Misc;
 using SDB.Parts;
 using System;
 
@@ -86,7 +87,7 @@ namespace TestSDB
         [TestMethod]
         public void TestParseWord()
         {
-            var en = SDB.Benumerator.AsLongString(new[] { "one ,two ,three" });
+            var en = Benumerator.AsLongString(new[] { "one ,two ,three" });
             en.MoveNext();
 
             Assert.AreEqual("one", SDB.Parser.ParseWord(en));

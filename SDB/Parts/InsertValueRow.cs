@@ -1,7 +1,7 @@
-﻿using SDB.Parts;
+﻿using SDB.Misc;
 using System;
 
-namespace SDB
+namespace SDB.Parts
 {
     public class InsertValueRow
     {

@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SDB
+namespace SDB.Misc
 {
     public class Benumerator
     {
-        public static Benumerator<Char> AsLongString(IEnumerable<string> lines)
+        public static Benumerator<char> AsLongString(IEnumerable<string> lines)
         {
-            return new Benumerator<Char>(_AsLongString(lines));
+            return new Benumerator<char>(_AsLongString(lines));
         }
 
-        private static IEnumerator<Char> _AsLongString(IEnumerable<string> lines)
+        private static IEnumerator<char> _AsLongString(IEnumerable<string> lines)
         {
             char? last = null;
             char cur;
@@ -81,7 +81,7 @@ namespace SDB
                     else
                         break;
                 }
-                else if(i+1 == EnumeratedCount)
+                else if (i + 1 == EnumeratedCount)
                 {
                     yield return Current;
                 }
