@@ -21,7 +21,7 @@ namespace TestSDB
                 .Select(q => new string[] { q })
                 .Select(SDB.Parser.Parse);
 
-            foreach(var query in queries)
+            foreach (var query in queries)
             {
                 query.Run();
             }

@@ -1,12 +1,25 @@
 ﻿using SDB.Misc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SDB.Parts
 {
     public class Select
     {
-        public static IEnumerable<SelectColumn> Parse(Benumerator<char> en)
+        public SelectColumn[] columns;
+        public string Definition => "SELECT " + string.Join(", ", columns.Select(c => c.columnName));
+
+        public static Select Parse(Benumerator<char> en)
+        {
+            var columns = _Parse(en);
+            return new Select
+            {
+                columns = columns.ToArray()
+            };
+        }
+
+        private static IEnumerable<SelectColumn> _Parse(Benumerator<char> en)
         {
             // Next value MUST be "SELECT " 
             if (en.Current != 'S' || !en.MoveNext()

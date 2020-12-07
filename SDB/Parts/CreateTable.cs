@@ -1,6 +1,8 @@
 ﻿using SDB.Misc;
 using System;
+using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SDB.Parts
 {
@@ -8,6 +10,7 @@ namespace SDB.Parts
     {
         public string tableName;
         public ColumnDefinition[] columns;
+        public string Definition => "CREATE TABLE " + tableName + " ( " + string.Join(", ", columns.Select(c => c.Definition)) + " )";
 
         public static new CreateTable Parse(Benumerator<char> en)
         {
@@ -62,9 +65,28 @@ namespace SDB.Parts
             };
         }
 
+        
+
         public override void Run()
         {
+            /* The plan */
+            // Need to come up with a storage system
+            //
+            // Need to store tables
+            //
+            // Store everything in a single file?
+            //
+            // Starting with a single plain text file
+
+            //using (FileStream f = File.OpenWrite(Config.fileLocation))
+            //{
+            //    f.
+            //}
+
+
             throw new NotImplementedException();
+
+
         }
     }
 }

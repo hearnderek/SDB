@@ -6,8 +6,11 @@ namespace SDB.Parts
 {
     public class Get : Query
     {
-        public string from;
+        public From from;
         public SelectColumn[] columns;
+        public Select select;
+
+        public string Definition => from.Definition + " " + select.Definition;
 
         public static new Get Parse(Benumerator<char> en)
         {
@@ -16,14 +19,15 @@ namespace SDB.Parts
                 throw new Exception("failed to parse. No Input");
 
             var from = From.Parse(en);
-            var cols = Select.Parse(en).ToArray();
+            var select = Select.Parse(en);
 
-            if (from != null && cols.Length > 0)
+            if (from != null && select.columns.Length > 0)
             {
                 return new Get
                 {
                     from = from,
-                    columns = cols
+                    columns = select.columns,
+                    select = select
                 };
             }
             else

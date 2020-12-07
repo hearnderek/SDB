@@ -6,9 +6,12 @@ namespace SDB.Parts
 {
     public class From
     {
-        public static string Parse(Benumerator<char> en)
-        {
+        public string table;
 
+        public string Definition => "FROM " + table;
+
+        public static From Parse(Benumerator<char> en)
+        {
             if (en.Current != 'F' || !en.MoveNext()
                 || en.Current != 'R' || !en.MoveNext()
                 || en.Current != 'O' || !en.MoveNext()
@@ -27,7 +30,9 @@ namespace SDB.Parts
             if (!en.MoveNext())
                 throw new Exception("failed to parse FROM. Unexpected end up input");
 
-            return new string(tableName.ToArray());
+            return new From{
+                table = new string(tableName.ToArray())
+            };
         }
 
     }

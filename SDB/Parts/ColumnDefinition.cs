@@ -9,6 +9,7 @@ namespace SDB.Parts
         public string type;
         public string name;
         public bool nullable = true;
+        public string Definition => name + " " + type;
 
         public static ColumnDefinition Parse(Benumerator<char> en)
         {
