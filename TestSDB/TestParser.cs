@@ -91,4 +91,26 @@ namespace TestSDB
 
         }
     }
+
+    [TestClass]
+    public class TestCreateTable
+    {
+
+        [TestMethod]
+        public void TestCreate()
+        {
+            var a = SDB.Parser.Parse(
+               new[] { "CREATE TABLE Taku ( one int, two int, three int )" }
+               );
+
+            var b = SDB.Parser.Parse(
+               new[] { "INSERT INTO Taku (one, two, three) VALUES ( 1, 2, 3 ), ( 1, 2, 3 )" }
+               );
+
+            var c = SDB.Parser.Parse(
+               new[] { "FROM Taku SELECT *" }
+               );
+        }
+    }
+
 }
