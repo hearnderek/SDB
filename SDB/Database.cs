@@ -60,6 +60,10 @@ namespace SDB
                 _inMemory.Add("");
                 insertAt = 4;
             }
+            else
+            {
+                insertAt = _inMemory.Count();
+            }
 
             if (_inMemory.Count == insertAt)
             {
@@ -69,6 +73,16 @@ namespace SDB
             {
                 _inMemory[insertAt] = table.Definition;
             }
+
+            // Add buffer row
+            if (_inMemory.Count == insertAt+1)
+            {
+                _inMemory.Add("");
+            }
+            else
+            {
+                _inMemory[insertAt+1] = "";
+            }
         }
 
         public void Insert(Parts.Insert insert)
@@ -77,6 +91,11 @@ namespace SDB
         }
 
         public int Count(string table)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int TableLocation(string table)
         {
             throw new NotImplementedException();
         }
