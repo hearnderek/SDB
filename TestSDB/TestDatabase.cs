@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 
 namespace TestSDB
@@ -54,6 +53,4 @@ namespace TestSDB
             Assert.AreEqual(9, db._inMemory.Count);
         }
     }
-
-
 }
