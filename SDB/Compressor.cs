@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SDB
 {
@@ -46,6 +47,24 @@ namespace SDB
                 i++;
             }
 
+        }
+
+        public void WriteToFile(string path)
+        {
+            int fp = 0;
+            int bufferSize = 10000;   
+            using (var bw = System.IO.File.Create(path))
+            {
+                var stream = StreamCompress();
+                byte[] buff;
+                do
+                {
+                    buff = stream.Take(bufferSize).ToArray();
+                    bw.Write(buff, fp, buff.Length);
+                    fp += buff.Length;
+
+                } while (buff.Length == bufferSize);
+            }
         }
 
         public List<Compressor> Mitosis()
@@ -104,6 +123,61 @@ namespace SDB
                 {
                     this
                 };
+            }
+        }
+
+        public IEnumerable<Byte> StreamCompress()
+        {
+            //List<Char> encoded = new List<char>();
+            List<Byte> bytes = new List<byte>();
+            bool first = false;
+            Byte x = 0x00;
+            var size = this.CharSize;
+            foreach (string s in input)
+            {
+                foreach (Char c in s + Environment.NewLine)
+                {
+                    var encoded = encodeMapping[c];
+                    var bits = BitConverter.GetBytes(encoded);
+
+                    if (size <= 16)
+                    {
+                        // compress to 1/4 size!
+
+                        if (!first)
+                        {
+                            x |= bits[0];
+                        }
+                        else
+                        {
+                            Byte t = (Byte)(bits[0] << 4);
+                            x |= t;
+                            yield return x;
+                            x = 0x00;
+                        }
+
+                        first = !first;
+                    }
+
+                    else if (size <= Byte.MaxValue + 1)
+                    {
+                        // compress to 1/2 size!
+                        yield return bits[0];
+                    }
+                    else
+                    {
+                        // no compression...
+                        yield return bits[0];
+                        yield return bits[1];
+                    }
+                }
+            }
+
+            // We MIGHT be half way through on the last byte
+            if (first)
+            {
+                // This will cause problem...
+                yield return x;
             }
         }
 
