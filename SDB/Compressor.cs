@@ -53,21 +53,39 @@ namespace SDB
             }
         }
 
-        public void WriteToFile(string path)
+        public void WriteToFile(string path, int bufferSize = 10000)
         {
-            int fp = 0;
-            int bufferSize = 10000;   
             using (var bw = System.IO.File.Create(path))
             {
                 var stream = StreamCompress();
-                byte[] buff;
-                do
+                foreach (Byte[] batch in Compressor.Batch(stream, bufferSize))
                 {
-                    buff = stream.Take(bufferSize).ToArray();
-                    bw.Write(buff, fp, buff.Length);
-                    fp += buff.Length;
+                    bw.Write(batch, 0, batch.Length);
+                };
+            }
+        }
 
-                } while (buff.Length == bufferSize);
+        public static IEnumerable<Byte[]> Batch(IEnumerable<Byte> collection, int batchSize)
+        {
+            var bsm1 = batchSize - 1;
+            int i = 0;
+            Byte[] nextbatch = new byte[batchSize];
+            foreach (Byte item in collection)
+            {
+                nextbatch[i++] = item;
+                if (i == bsm1)
+                {
+                    yield return nextbatch;
+                    nextbatch = new byte[batchSize];
+                    i = 0;
+                }
+            }
+
+            if (i > 0)
+            {
+                Byte[] miniBatch = new byte[i];
+                Array.Copy(nextbatch, miniBatch, i);
+                yield return miniBatch;
             }
         }
 
