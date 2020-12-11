@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 namespace SDB
 {
@@ -63,6 +64,51 @@ namespace SDB
                     bw.Write(batch, 0, batch.Length);
                 };
             }
+        }
+
+        public static List<UInt32> Exponents(BigInteger x, int exponent = 3)
+        {
+            var l = new List<UInt32>();
+            do
+            {
+                UInt16 exp = (UInt16)BigInteger.Log(x, exponent);
+                BigInteger best = BigInteger.Pow(exponent, exp); ;
+                UInt32 mul = 1;
+                for(int i = 0; i < exp; i++)
+                {
+                    UInt16 exp2 = (UInt16)(BigInteger.Log(x, exponent) - i);
+                    var powed2 = BigInteger.Pow(exponent, exp2);
+                    var bigMul2 = BigInteger.Divide(x, powed2);
+                    UInt32 mul2 = UInt32.MaxValue;
+
+                    if (bigMul2 <= UInt32.MaxValue)
+                    {
+                        mul2 = (UInt32)bigMul2;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                    
+                    
+                    BigInteger next = powed2 * new BigInteger(mul2);
+
+
+                    if (best < next)
+                    {
+                        exp = exp2;
+                        mul = mul2;
+                        best = next;
+                    }
+                }
+                l.Add((UInt32)exp);
+                l.Add(mul);
+                x -= best;
+
+            } while (x > UInt32.MaxValue);
+            UInt32 remainder = (UInt32)x;
+            l.Add(remainder);
+            return l;
         }
 
         public static IEnumerable<Byte[]> Batch(IEnumerable<Byte> collection, int batchSize)
