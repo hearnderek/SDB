@@ -37,6 +37,11 @@ namespace SDB
                 chars.UnionWith(s);
             }
 
+            SetMapping();
+        }
+
+        public void SetMapping()
+        {
             encodeMapping.Clear();
             decodeMapping.Clear();
             Char i = (Char)0;
@@ -46,7 +51,6 @@ namespace SDB
                 decodeMapping[i] = c;
                 i++;
             }
-
         }
 
         public void WriteToFile(string path)
@@ -65,6 +69,48 @@ namespace SDB
 
                 } while (buff.Length == bufferSize);
             }
+        }
+
+        public Byte[] FileHeader()
+        {
+            var magicNumber = BitConverter.GetBytes(0xDEADBEEF);
+            List<Byte> bs = new List<byte>(magicNumber);
+
+            Byte[] last = new Byte[] { magicNumber[magicNumber.Length - 2], magicNumber[magicNumber.Length - 1] };
+            foreach(Char c in chars)
+            {
+                last = BitConverter.GetBytes(c);
+                bs.AddRange(last);
+            }
+            bs.AddRange(last);
+
+            return bs.ToArray();
+        }
+
+        public static Compressor FromHeader(Byte[] headerBytes)
+        {
+            if(headerBytes.Length < 6)
+            {
+                // something is wrong
+                return null;
+            }
+            if(headerBytes.Length == 6)
+            {
+                // empty
+                // 0xDEADBEEF
+                return new Compressor();
+            }
+            var chars = new SortedSet<Char>();
+            for (int i = 4; i+1 < headerBytes.Length; i+=2)
+            {
+                if (! chars.Add(BitConverter.ToChar(headerBytes, i)))
+                    // We repeat the last character as a sign of ending our header
+                    break;
+            }
+            var comp = new Compressor { chars = chars };
+            comp.SetMapping();
+            return comp;
+
         }
 
         public List<Compressor> Mitosis()
@@ -128,8 +174,11 @@ namespace SDB
 
         public IEnumerable<Byte> StreamCompress()
         {
-            //List<Char> encoded = new List<char>();
-            List<Byte> bytes = new List<byte>();
+            foreach(Byte b in FileHeader())
+            {
+                yield return b;
+            }
+
             bool first = false;
             Byte x = 0x00;
             var size = this.CharSize;
@@ -199,7 +248,7 @@ namespace SDB
                 }
             }
 
-            List<Byte> bytes = new List<byte>();
+            List<Byte> bytes = new List<byte>(FileHeader());
             bool first = false;
             Byte x = 0x00;
             var size = this.CharSize;
