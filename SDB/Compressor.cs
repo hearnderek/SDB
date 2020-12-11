@@ -71,7 +71,7 @@ namespace SDB
             }
         }
 
-        public Byte[] FileHeader()
+        public Byte[] FileHeaderSimple()
         {
             var magicNumber = BitConverter.GetBytes(0xDEADBEEF);
             List<Byte> bs = new List<byte>(magicNumber);
@@ -85,6 +85,92 @@ namespace SDB
             bs.AddRange(last);
 
             return bs.ToArray();
+        }
+
+        public Byte[] FileHeader()
+        {
+            var magicNumber = BitConverter.GetBytes(0xDEADBEEF);
+            List<Byte> bs = new List<byte>(magicNumber);
+
+            bool skipping = false;
+            Byte[] tbb = new Byte[] { magicNumber[magicNumber.Length - 2], magicNumber[magicNumber.Length - 1] };
+            Char? last = null;
+            foreach (Char c in chars)
+            {
+                // two bit buffer
+                tbb = BitConverter.GetBytes(c);
+                if(last.HasValue && c - last == 1)
+                {
+                    if (skipping)
+                    {
+                        // Write nothing!
+                        // able to write one less char with no dataloss
+                    }
+                    else
+                    {
+                        // double up the last character to indicate a continuious jump
+                        var count = bs.Count();
+                        bs.Add(bs[count - 2]);
+                        bs.Add(bs[count - 1]);
+
+                        skipping = true;
+                    }
+                }
+                else
+                {
+                    if (skipping)
+                    {
+                        // Last C should logically always have a value at this point
+                        bs.AddRange(BitConverter.GetBytes(last.Value));
+                    }
+                    bs.AddRange(tbb);
+                    skipping = false;
+                }
+
+                last = c;
+            }
+
+            // Final character should always be a tripplet
+            if (skipping)
+            {
+                tbb = BitConverter.GetBytes(last.Value);
+                bs.AddRange(tbb);
+                bs.AddRange(tbb);
+                bs.AddRange(tbb);
+            }
+            else
+            {
+                bs.AddRange(tbb);
+                bs.AddRange(tbb);
+            }
+
+            return bs.ToArray();
+        }
+
+        public static Compressor FromHeaderSimple(Byte[] headerBytes)
+        {
+            if (headerBytes.Length < 6)
+            {
+                // something is wrong
+                return null;
+            }
+            if (headerBytes.Length == 6)
+            {
+                // empty
+                // 0xDEADBEEF
+                return new Compressor();
+            }
+            var chars = new SortedSet<Char>();
+            for (int i = 4; i + 1 < headerBytes.Length; i += 2)
+            {
+                if (!chars.Add(BitConverter.ToChar(headerBytes, i)))
+                    // We repeat the last character as a sign of ending our header
+                    break;
+            }
+            var comp = new Compressor { chars = chars };
+            comp.SetMapping();
+            return comp;
+
         }
 
         public static Compressor FromHeader(Byte[] headerBytes)
@@ -101,11 +187,35 @@ namespace SDB
                 return new Compressor();
             }
             var chars = new SortedSet<Char>();
+            Char? doubled = null;
             for (int i = 4; i+1 < headerBytes.Length; i+=2)
             {
-                if (! chars.Add(BitConverter.ToChar(headerBytes, i)))
-                    // We repeat the last character as a sign of ending our header
-                    break;
+
+                Char c = BitConverter.ToChar(headerBytes, i);
+                if (chars.Add(c))
+                {
+                    if (doubled.HasValue)
+                    {
+                        for (Char nextC = (Char)(doubled.Value + 1); nextC < chars.Max; nextC++)
+                        {
+                            chars.Add(nextC);
+                        }
+                    }
+                    doubled = null;
+                }
+                else
+                {
+                    if (doubled.HasValue)
+                    {
+                        // We repeat the last character 3 times as a sign of ending our header
+                        break;
+                    }
+                    else
+                    {
+                        // saw the same character twice
+                        doubled = c;
+                    }
+                }
             }
             var comp = new Compressor { chars = chars };
             comp.SetMapping();
@@ -113,64 +223,6 @@ namespace SDB
 
         }
 
-        public List<Compressor> Mitosis()
-        {
-            var range = Range;
-            if (range > byte.MaxValue * 2)
-            {
-                List<char> cs = new List<char>();
-                List<int> distance = new List<int>();
-                char last = chars.Min;
-                int largestDist = 0;
-                int largestDiffIndex = 0;
-                int i = 0;
-                foreach (char c in chars)
-                {
-                    cs.Add(c);
-                    var dist = c - last;
-                    distance.Add(dist);
-                    if(dist > largestDist)
-                    {
-                        largestDist = dist;
-                        largestDiffIndex = i;
-                    }
-                    last = c;
-                    i++;
-                }
-
-                if(largestDist > range/4)
-                {
-                    var small = new Compressor();
-                    small.SetInput(new String(cs.GetRange(0, largestDiffIndex).ToArray()));
-                    small.Process();
-                    var smalls = small.Mitosis();
-                    
-                    var big = new Compressor();
-                    big.SetInput(new String(cs.GetRange(largestDiffIndex, cs.Count - largestDiffIndex).ToArray()));
-                    big.Process();
-                    var bigs = big.Mitosis();
-
-                    smalls.AddRange(bigs);
-                    return smalls;
-                }
-                else
-                {
-                    return new List<Compressor>
-                    {
-                        this
-                    };
-                }
-
-                var x = cs[cs.Count / 2];
-            }
-            else
-            {
-                return new List<Compressor>
-                {
-                    this
-                };
-            }
-        }
 
         public IEnumerable<Byte> StreamCompress()
         {
