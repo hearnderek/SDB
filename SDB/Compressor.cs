@@ -167,10 +167,6 @@ namespace SDB
                 {
                     mul = (UInt32)bigMul;
                 }
-                else
-                {
-                    break;
-                }
 
                 
                 l.Add((UInt32)(exp-newExp));
@@ -203,18 +199,43 @@ namespace SDB
         {
             using (var bw = System.IO.File.Create(filepath))
             {
-                int i = 1;
-                for (; i < xs.Count - 1; i += 2)
+                if(xs[1] != 0)
                 {
-                    var batchShort = BitConverter.GetBytes(xs[i - 1]).Take(2).ToArray();
-                    bw.Write(batchShort, 0, 2);
+                    WriteExponentsImplicit(xs, bw);
 
-                    var batchUint = BitConverter.GetBytes(xs[i]);
-                    bw.Write(batchUint, 0, 4);
                 }
-                var batchAddUint = BitConverter.GetBytes(xs[i - 1]);
-                bw.Write(batchAddUint, 0, 4);
+                else
+                { 
+                    WriteExponentsExplicit(xs, bw);
+                }
             }
+        }
+
+        private static void WriteExponentsImplicit(List<uint> xs, System.IO.FileStream bw)
+        {
+            int i = 1;
+            var batchShort = BitConverter.GetBytes(xs[0]).Take(2).ToArray();
+            bw.Write(batchShort, 0, 2);
+            for (; i < xs.Count; i++)
+            {
+                var batchUint = BitConverter.GetBytes(xs[i]);
+                bw.Write(batchUint, 0, 4);
+            }
+        }
+
+        private static void WriteExponentsExplicit(List<uint> xs, System.IO.FileStream bw)
+        {
+            int i = 1;
+            for (; i < xs.Count - 1; i += 2)
+            {
+                var batchShort = BitConverter.GetBytes(xs[i - 1]).Take(1).ToArray();
+                bw.Write(batchShort, 0, 2);
+
+                var batchUint = BitConverter.GetBytes(xs[i]);
+                bw.Write(batchUint, 0, 4);
+            }
+            var batchAddUint = BitConverter.GetBytes(xs[i - 1]);
+            bw.Write(batchAddUint, 0, 4);
         }
 
         public static IEnumerable<Byte[]> Batch(IEnumerable<Byte> collection, int batchSize)
