@@ -66,23 +66,49 @@ namespace SDB
             }
         }
 
-        public static BigInteger ReadExponent(IEnumerable<Byte> parts, int exponentBase = 3)
+        public static BigInteger Sqrt(BigInteger n)
+        {
+            if (n == 0) return 0;
+            if (n > 0)
+            {
+                int bitLength = Convert.ToInt32(Math.Ceiling(BigInteger.Log(n, 2)));
+                BigInteger root = BigInteger.One << (bitLength / 2);
+
+                while (!isSqrt(n, root))
+                {
+                    root += n / root;
+                    root /= 2;
+                }
+
+                return root;
+            }
+
+            throw new ArithmeticException("NaN");
+        }
+
+        private static Boolean isSqrt(BigInteger n, BigInteger root)
+        {
+            BigInteger lowerBound = root * root;
+            BigInteger upperBound = (root + 1) * (root + 1);
+
+            return (n >= lowerBound && n < upperBound);
+        }
+
+        public static BigInteger ReadExponent(IEnumerable<Byte> parts, UInt32 exponentBase = UInt32.MaxValue)
         {
             // Assumption 1: The number of parts is odd
             BigInteger x = 0;
-            BigInteger expBase = exponentBase; 
-            Byte[] tbb = new Byte[2];
+            BigInteger expBase = exponentBase;
+            Byte[] tbb = parts.Take(2).ToArray();
+            UInt16 exp = BitConverter.ToUInt16(tbb);
             Byte[] fbb = new Byte[4];
             int i = 0;
             foreach(Byte part in parts)
             {
                 // [UInt16, UInt32]
                 // [0,1   , 2,3,4,5]
-                if (i < 2)
-                {
-                    tbb[i] = part;
-                }
-                else if (i < 5)
+                
+                if (i < 3)
                 {
                     fbb[i - 2] = part;
                 }
@@ -90,13 +116,14 @@ namespace SDB
                 {
                     fbb[i - 2] = part;
 
-                    UInt16 exp = BitConverter.ToUInt16(tbb);
+                    
                     UInt32 mul = BitConverter.ToUInt32(fbb);
                     x += BigInteger.Pow(expBase, exp) * mul;
                     i = -1; // will get incremented to 0
                 }
 
                 i++;
+                exp--;
             }
 
             if(i == 4)
@@ -118,7 +145,7 @@ namespace SDB
         }
 
         
-        public static List<UInt32> Exponents(BigInteger x, int exponent = 3)
+        public static List<UInt32> Exponents(BigInteger x, UInt32 exponent = UInt32.MaxValue)
         {
             /*
             Format of the numbers ^({UInt16}{UInt32})*{UInt32}$
@@ -126,46 +153,49 @@ namespace SDB
             Build a BigInteger (a whole file binary) using this formula
 
             */
-            var l = new List<UInt32>();
+            UInt16 exp = (UInt16)(BigInteger.Log(x, exponent));
+            var l = new List<UInt32> { (UInt32)exp };
             do
             {
-                UInt16 exp = (UInt16)BigInteger.Log(x, exponent);
-                BigInteger best = BigInteger.Pow(exponent, exp); ;
+                // This will 
+                UInt16 newExp = (UInt16)BigInteger.Log(x, exponent);
+                BigInteger powed = BigInteger.Pow(exponent, newExp);
+                var bigMul = BigInteger.Divide(x, powed);
                 UInt32 mul = 1;
-                for(int i = 0; i < exp; i++)
+
+                if (bigMul <= UInt32.MaxValue)
                 {
-                    UInt16 exp2 = (UInt16)(BigInteger.Log(x, exponent) - i);
-                    var powed2 = BigInteger.Pow(exponent, exp2);
-                    var bigMul2 = BigInteger.Divide(x, powed2);
-                    UInt32 mul2 = UInt32.MaxValue;
-
-                    if (bigMul2 <= UInt32.MaxValue)
-                    {
-                        mul2 = (UInt32)bigMul2;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                    
-                    
-                    BigInteger next = powed2 * new BigInteger(mul2);
-
-
-                    if (best < next)
-                    {
-                        exp = exp2;
-                        mul = mul2;
-                        best = next;
-                    }
+                    mul = (UInt32)bigMul;
                 }
-                l.Add((UInt32)exp);
+                else
+                {
+                    break;
+                }
+
+                
+                l.Add((UInt32)(exp-newExp));
                 l.Add(mul);
-                x -= best;
+
+                x -= powed * mul;
+                exp = newExp;
+                //exp--;
 
             } while (x > UInt32.MaxValue);
             UInt32 remainder = (UInt32)x;
             l.Add(remainder);
+
+            int i = 3;
+            for (; i < l.Count()-1 && l[i] == 1; i += 2) ;
+
+
+            if(i >= l.Count()-2)
+            {
+                for(i -= 2; i > 0; i -= 2)
+                {
+                    l.RemoveAt(i);
+                }
+            }
+
             return l;
         }
 
