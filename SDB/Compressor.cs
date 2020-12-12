@@ -66,8 +66,66 @@ namespace SDB
             }
         }
 
+        public static BigInteger ReadExponent(IEnumerable<Byte> parts, int exponentBase = 3)
+        {
+            // Assumption 1: The number of parts is odd
+            BigInteger x = 0;
+            BigInteger expBase = exponentBase; 
+            Byte[] tbb = new Byte[2];
+            Byte[] fbb = new Byte[4];
+            int i = 0;
+            foreach(Byte part in parts)
+            {
+                // [UInt16, UInt32]
+                // [0,1   , 2,3,4,5]
+                if (i < 2)
+                {
+                    tbb[i] = part;
+                }
+                else if (i < 5)
+                {
+                    fbb[i - 2] = part;
+                }
+                else
+                {
+                    fbb[i - 2] = part;
+
+                    UInt16 exp = BitConverter.ToUInt16(tbb);
+                    UInt32 mul = BitConverter.ToUInt32(fbb);
+                    x += BigInteger.Pow(expBase, exp) * mul;
+                    i = -1; // will get incremented to 0
+                }
+
+                i++;
+            }
+
+            if(i == 4)
+            {
+                fbb[2] = fbb[0];
+                fbb[3] = fbb[1];
+                fbb[0] = tbb[0];
+                fbb[1] = tbb[1];
+                UInt32 add = BitConverter.ToUInt32(fbb);
+
+                x += add;
+            }
+            else
+            {
+                throw new Exception("Reached an impossible state for this compression");
+            }
+
+            return x;
+        }
+
+        
         public static List<UInt32> Exponents(BigInteger x, int exponent = 3)
         {
+            /*
+            Format of the numbers ^({UInt16}{UInt32})*{UInt32}$
+
+            Build a BigInteger (a whole file binary) using this formula
+
+            */
             var l = new List<UInt32>();
             do
             {
