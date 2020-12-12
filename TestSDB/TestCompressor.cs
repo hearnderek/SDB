@@ -288,20 +288,7 @@ namespace TestSDB
                 BigInteger bi = new BigInteger(bytes);
                 var xs = SDB.Compressor.Exponents(bi);
 
-                using (var bw = System.IO.File.Create(tmpFile1))
-                {
-                    int i = 1;
-                    for (; i < xs.Count-1; i+=2)
-                    {
-                        var batchShort = BitConverter.GetBytes(xs[i - 1]).Take(2).ToArray();
-                        bw.Write(batchShort, 0, 2);
-
-                        var batchUint = BitConverter.GetBytes(xs[i]);
-                        bw.Write(batchUint, 0, 4);
-                    }
-                    var batchAddUint = BitConverter.GetBytes(xs[i - 1]);
-                    bw.Write(batchAddUint, 0, 4);
-                }
+                SDB.Compressor.WriteExponents(xs, tmpFile1);
                 var l2 = new System.IO.FileInfo(tmpFile1).Length;
 
 

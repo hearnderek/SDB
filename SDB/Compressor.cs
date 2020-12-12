@@ -199,6 +199,24 @@ namespace SDB
             return l;
         }
 
+        public static void WriteExponents(List<UInt32> xs, string filepath)
+        {
+            using (var bw = System.IO.File.Create(filepath))
+            {
+                int i = 1;
+                for (; i < xs.Count - 1; i += 2)
+                {
+                    var batchShort = BitConverter.GetBytes(xs[i - 1]).Take(2).ToArray();
+                    bw.Write(batchShort, 0, 2);
+
+                    var batchUint = BitConverter.GetBytes(xs[i]);
+                    bw.Write(batchUint, 0, 4);
+                }
+                var batchAddUint = BitConverter.GetBytes(xs[i - 1]);
+                bw.Write(batchAddUint, 0, 4);
+            }
+        }
+
         public static IEnumerable<Byte[]> Batch(IEnumerable<Byte> collection, int batchSize)
         {
             var bsm1 = batchSize - 1;
