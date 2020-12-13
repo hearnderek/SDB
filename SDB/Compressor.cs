@@ -167,6 +167,10 @@ namespace SDB
                 {
                     mul = (UInt32)bigMul;
                 }
+                else
+                {
+                    mul = UInt32.MaxValue;
+                }
 
                 
                 l.Add((UInt32)(exp-newExp));
