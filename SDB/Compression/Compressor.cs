@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace SDB
+namespace SDB.Compression
 {
     public class Compressor
     {
@@ -15,8 +15,8 @@ namespace SDB
         public List<string> input = new List<string>();
         public SortedSet<char> chars = new SortedSet<char>();
 
-        public Dictionary<Char, Char> encodeMapping = new Dictionary<char, char>();
-        public Dictionary<Char, Char> decodeMapping = new Dictionary<char, char>();
+        public Dictionary<char, char> encodeMapping = new Dictionary<char, char>();
+        public Dictionary<char, char> decodeMapping = new Dictionary<char, char>();
         public void SetInput(string x)
         {
             SetInput(new List<string> { x });
@@ -45,7 +45,7 @@ namespace SDB
         {
             encodeMapping.Clear();
             decodeMapping.Clear();
-            Char i = (Char)0;
+            char i = (char)0;
             foreach (char c in chars)
             {
                 encodeMapping[c] = i;
@@ -59,195 +59,19 @@ namespace SDB
             using (var bw = System.IO.File.Create(path))
             {
                 var stream = StreamCompress();
-                foreach (Byte[] batch in Compressor.Batch(stream, bufferSize))
+                foreach (byte[] batch in Batch(stream, bufferSize))
                 {
                     bw.Write(batch, 0, batch.Length);
                 };
             }
         }
 
-        public static BigInteger Sqrt(BigInteger n)
-        {
-            if (n == 0) return 0;
-            if (n > 0)
-            {
-                int bitLength = Convert.ToInt32(Math.Ceiling(BigInteger.Log(n, 2)));
-                BigInteger root = BigInteger.One << (bitLength / 2);
-
-                while (!isSqrt(n, root))
-                {
-                    root += n / root;
-                    root /= 2;
-                }
-
-                return root;
-            }
-
-            throw new ArithmeticException("NaN");
-        }
-
-        private static Boolean isSqrt(BigInteger n, BigInteger root)
-        {
-            BigInteger lowerBound = root * root;
-            BigInteger upperBound = (root + 1) * (root + 1);
-
-            return (n >= lowerBound && n < upperBound);
-        }
-
-        public static BigInteger ReadExponent(IEnumerable<Byte> parts, UInt32 exponentBase = UInt32.MaxValue)
-        {
-            // Assumption 1: The number of parts is odd
-            BigInteger x = 0;
-            BigInteger expBase = exponentBase;
-            Byte[] tbb = parts.Take(2).ToArray();
-            UInt16 exp = BitConverter.ToUInt16(tbb);
-            Byte[] fbb = new Byte[4];
-            int i = 0;
-            foreach(Byte part in parts)
-            {
-                // [UInt16, UInt32]
-                // [0,1   , 2,3,4,5]
-                
-                if (i < 3)
-                {
-                    fbb[i - 2] = part;
-                }
-                else
-                {
-                    fbb[i - 2] = part;
-
-                    
-                    UInt32 mul = BitConverter.ToUInt32(fbb);
-                    x += BigInteger.Pow(expBase, exp) * mul;
-                    i = -1; // will get incremented to 0
-                }
-
-                i++;
-                exp--;
-            }
-
-            if(i == 4)
-            {
-                fbb[2] = fbb[0];
-                fbb[3] = fbb[1];
-                fbb[0] = tbb[0];
-                fbb[1] = tbb[1];
-                UInt32 add = BitConverter.ToUInt32(fbb);
-
-                x += add;
-            }
-            else
-            {
-                throw new Exception("Reached an impossible state for this compression");
-            }
-
-            return x;
-        }
-
-        
-        public static List<UInt32> Exponents(BigInteger x, UInt32 exponent = UInt32.MaxValue)
-        {
-            /*
-            Format of the numbers ^({UInt16}{UInt32})*{UInt32}$
-
-            Build a BigInteger (a whole file binary) using this formula
-
-            */
-            UInt16 exp = (UInt16)(BigInteger.Log(x, exponent));
-            var l = new List<UInt32> { (UInt32)exp };
-            do
-            {
-                // This will 
-                UInt16 newExp = (UInt16)BigInteger.Log(x, exponent);
-                BigInteger powed = BigInteger.Pow(exponent, newExp);
-                var bigMul = BigInteger.Divide(x, powed);
-                UInt32 mul = 1;
-
-                if (bigMul <= UInt32.MaxValue)
-                {
-                    mul = (UInt32)bigMul;
-                }
-                else
-                {
-                    mul = UInt32.MaxValue;
-                }
-
-                
-                l.Add((UInt32)(exp-newExp));
-                l.Add(mul);
-
-                x -= powed * mul;
-                exp = newExp;
-                //exp--;
-
-            } while (x > UInt32.MaxValue);
-            UInt32 remainder = (UInt32)x;
-            l.Add(remainder);
-
-            int i = 3;
-            for (; i < l.Count()-1 && l[i] == 1; i += 2) ;
-
-
-            if(i >= l.Count()-2)
-            {
-                for(i -= 2; i > 0; i -= 2)
-                {
-                    l.RemoveAt(i);
-                }
-            }
-
-            return l;
-        }
-
-        public static void WriteExponents(List<UInt32> xs, string filepath)
-        {
-            using (var bw = System.IO.File.Create(filepath))
-            {
-                if(xs[1] != 0)
-                {
-                    WriteExponentsImplicit(xs, bw);
-
-                }
-                else
-                { 
-                    WriteExponentsExplicit(xs, bw);
-                }
-            }
-        }
-
-        private static void WriteExponentsImplicit(List<uint> xs, System.IO.FileStream bw)
-        {
-            int i = 1;
-            var batchShort = BitConverter.GetBytes(xs[0]).Take(2).ToArray();
-            bw.Write(batchShort, 0, 2);
-            for (; i < xs.Count; i++)
-            {
-                var batchUint = BitConverter.GetBytes(xs[i]);
-                bw.Write(batchUint, 0, 4);
-            }
-        }
-
-        private static void WriteExponentsExplicit(List<uint> xs, System.IO.FileStream bw)
-        {
-            int i = 1;
-            for (; i < xs.Count - 1; i += 2)
-            {
-                var batchShort = BitConverter.GetBytes(xs[i - 1]).Take(1).ToArray();
-                bw.Write(batchShort, 0, 2);
-
-                var batchUint = BitConverter.GetBytes(xs[i]);
-                bw.Write(batchUint, 0, 4);
-            }
-            var batchAddUint = BitConverter.GetBytes(xs[i - 1]);
-            bw.Write(batchAddUint, 0, 4);
-        }
-
-        public static IEnumerable<Byte[]> Batch(IEnumerable<Byte> collection, int batchSize)
+        public static IEnumerable<byte[]> Batch(IEnumerable<byte> collection, int batchSize)
         {
             var bsm1 = batchSize - 1;
             int i = 0;
-            Byte[] nextbatch = new byte[batchSize];
-            foreach (Byte item in collection)
+            byte[] nextbatch = new byte[batchSize];
+            foreach (byte item in collection)
             {
                 nextbatch[i++] = item;
                 if (i == bsm1)
@@ -260,19 +84,19 @@ namespace SDB
 
             if (i > 0)
             {
-                Byte[] miniBatch = new byte[i];
+                byte[] miniBatch = new byte[i];
                 Array.Copy(nextbatch, miniBatch, i);
                 yield return miniBatch;
             }
         }
 
-        public Byte[] FileHeaderSimple()
+        public byte[] FileHeaderSimple()
         {
             var magicNumber = BitConverter.GetBytes(0xDEADBEEF);
-            List<Byte> bs = new List<byte>(magicNumber);
+            List<byte> bs = new List<byte>(magicNumber);
 
-            Byte[] last = new Byte[] { magicNumber[magicNumber.Length - 2], magicNumber[magicNumber.Length - 1] };
-            foreach(Char c in chars)
+            byte[] last = new byte[] { magicNumber[magicNumber.Length - 2], magicNumber[magicNumber.Length - 1] };
+            foreach (char c in chars)
             {
                 last = BitConverter.GetBytes(c);
                 bs.AddRange(last);
@@ -282,19 +106,19 @@ namespace SDB
             return bs.ToArray();
         }
 
-        public Byte[] FileHeader()
+        public byte[] FileHeader()
         {
             var magicNumber = BitConverter.GetBytes(0xDEADBEEF);
-            List<Byte> bs = new List<byte>(magicNumber);
+            List<byte> bs = new List<byte>(magicNumber);
 
             bool skipping = false;
-            Byte[] tbb = new Byte[] { magicNumber[magicNumber.Length - 2], magicNumber[magicNumber.Length - 1] };
-            Char? last = null;
-            foreach (Char c in chars)
+            byte[] tbb = new byte[] { magicNumber[magicNumber.Length - 2], magicNumber[magicNumber.Length - 1] };
+            char? last = null;
+            foreach (char c in chars)
             {
                 // two bit buffer
                 tbb = BitConverter.GetBytes(c);
-                if(last.HasValue && c - last == 1)
+                if (last.HasValue && c - last == 1)
                 {
                     if (skipping)
                     {
@@ -342,7 +166,7 @@ namespace SDB
             return bs.ToArray();
         }
 
-        public static Compressor FromHeaderSimple(Byte[] headerBytes)
+        public static Compressor FromHeaderSimple(byte[] headerBytes)
         {
             if (headerBytes.Length < 6)
             {
@@ -355,7 +179,7 @@ namespace SDB
                 // 0xDEADBEEF
                 return new Compressor();
             }
-            var chars = new SortedSet<Char>();
+            var chars = new SortedSet<char>();
             for (int i = 4; i + 1 < headerBytes.Length; i += 2)
             {
                 if (!chars.Add(BitConverter.ToChar(headerBytes, i)))
@@ -368,30 +192,30 @@ namespace SDB
 
         }
 
-        public static Compressor FromHeader(Byte[] headerBytes)
+        public static Compressor FromHeader(byte[] headerBytes)
         {
-            if(headerBytes.Length < 6)
+            if (headerBytes.Length < 6)
             {
                 // something is wrong
                 return null;
             }
-            if(headerBytes.Length == 6)
+            if (headerBytes.Length == 6)
             {
                 // empty
                 // 0xDEADBEEF
                 return new Compressor();
             }
-            var chars = new SortedSet<Char>();
-            Char? doubled = null;
-            for (int i = 4; i+1 < headerBytes.Length; i+=2)
+            var chars = new SortedSet<char>();
+            char? doubled = null;
+            for (int i = 4; i + 1 < headerBytes.Length; i += 2)
             {
 
-                Char c = BitConverter.ToChar(headerBytes, i);
+                char c = BitConverter.ToChar(headerBytes, i);
                 if (chars.Add(c))
                 {
                     if (doubled.HasValue)
                     {
-                        for (Char nextC = (Char)(doubled.Value + 1); nextC < chars.Max; nextC++)
+                        for (char nextC = (char)(doubled.Value + 1); nextC < chars.Max; nextC++)
                         {
                             chars.Add(nextC);
                         }
@@ -419,19 +243,19 @@ namespace SDB
         }
 
 
-        public IEnumerable<Byte> StreamCompress()
+        public IEnumerable<byte> StreamCompress()
         {
-            foreach(Byte b in FileHeader())
+            foreach (byte b in FileHeader())
             {
                 yield return b;
             }
 
             bool first = false;
-            Byte x = 0x00;
-            var size = this.CharSize;
+            byte x = 0x00;
+            var size = CharSize;
             foreach (string s in input)
             {
-                foreach (Char c in s + Environment.NewLine)
+                foreach (char c in s + Environment.NewLine)
                 {
                     var encoded = encodeMapping[c];
                     var bits = BitConverter.GetBytes(encoded);
@@ -446,7 +270,7 @@ namespace SDB
                         }
                         else
                         {
-                            Byte t = (Byte)(bits[0] << 4);
+                            byte t = (byte)(bits[0] << 4);
                             x |= t;
                             yield return x;
                             x = 0x00;
@@ -455,7 +279,7 @@ namespace SDB
                         first = !first;
                     }
 
-                    else if (size <= Byte.MaxValue + 1)
+                    else if (size <= byte.MaxValue + 1)
                     {
                         // compress to 1/2 size!
                         yield return bits[0];
@@ -477,34 +301,34 @@ namespace SDB
             }
         }
 
-        public List<Byte> Compress()
+        public List<byte> Compress()
         {
-            List<Char> encoded = new List<char>();
-            foreach(string s in input)
+            List<char> encoded = new List<char>();
+            foreach (string s in input)
             {
-                foreach(Char c in s)
+                foreach (char c in s)
                 {
                     encoded.Add(encodeMapping[c]);
-                    
+
                 }
 
                 // lazy method of adding a newline after every "line" of input
-                foreach (Char c in Environment.NewLine)
+                foreach (char c in Environment.NewLine)
                 {
                     encoded.Add(encodeMapping[c]);
                 }
             }
 
-            List<Byte> bytes = new List<byte>(FileHeader());
+            List<byte> bytes = new List<byte>(FileHeader());
             bool first = false;
-            Byte x = 0x00;
-            var size = this.CharSize;
+            byte x = 0x00;
+            var size = CharSize;
 
 
-            foreach (Char c in encoded)
+            foreach (char c in encoded)
             {
                 var bits = BitConverter.GetBytes(c);
-                
+
                 if (size <= 16)
                 {
                     // compress to 1/4 size!
@@ -515,16 +339,16 @@ namespace SDB
                     }
                     else
                     {
-                        Byte t = (Byte)(bits[0] << 4);
+                        byte t = (byte)(bits[0] << 4);
                         x |= t;
                         bytes.Add(x);
                         x = 0x00;
                     }
-                    
+
                     first = !first;
                 }
-                
-                else if (size <= Byte.MaxValue + 1)
+
+                else if (size <= byte.MaxValue + 1)
                 {
                     // compress to 1/2 size!
                     bytes.Add(bits[0]);
@@ -543,7 +367,7 @@ namespace SDB
 
         public int GetCompression()
         {
-            return (int)Math.Pow(2,  Math.Ceiling(Math.Log(CharSize, 2)));
+            return (int)Math.Pow(2, Math.Ceiling(Math.Log(CharSize, 2)));
         }
 
     }
